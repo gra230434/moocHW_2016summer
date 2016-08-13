@@ -71,24 +71,20 @@ void free_pair(Pair* p);
 
 int main(void)
 {
-    List *s1, *s2, *s3;
-    Pair *p;
-    int N, i;
+    List *s1;
+    Pair *p1;
+    Atom *tmp;
 
     s1 = read_list();
-    s2 = read_list();
 
-    scanf("%d", &N);
-    for (i=0; i<N; i++) {
-        s3 = zip(s1, s2);
-        free_list(s1);
-        s1 = s2;
-        s2 = s3;
-    }
+    p1 = split_at(length(s1)/2, s1);
+    tmp = p1->left;
+    p1->left = p1->right;
+    p1->right = tmp;
 
 
-    p = unzip(s3);
-    print_pair(p);
+
+    print_pair(p1);
     printf("\n");
 
 
@@ -292,54 +288,38 @@ List* tail(List *lptr)
     return (lptr==NULL) ? NULL : lptr->next;
 }
 
-/* create a new list combining a string list and a value list
-If the two input lists have different lengths, the new list will be
-of the same length as the shorter one.
-*/
 
-List* zip(List *lptr1, List *lptr2)
+List* take(int n, List *lptr)
 {
-    Atom a;
-    List *l1, *l2;
-
-    if ( lptr1 == NULL || lptr2 == NULL ) { // lptr1 或 lptr2 兩者有一個是 NULL
-        return NULL;
-    } else {
-        a.pair = (Pair*) malloc(sizeof(Pair)); // malloc 取得一塊 Pair 空間
-        a.pair->left = copy_atom(lptr1->data); // 利用  copy_atom  複製 lptr1 的開頭第一個 atom
-        a.pair->right = copy_atom(lptr2->data); // 利用  copy_atom  複製 lptr2 的開頭第一個 atom
-        a.dtype = 2;
-        l1 = zip(lptr1->next,lptr2->next); // 利用 zip 處理剩下的 lists  (提示: 用遞迴)
-        l2 = cons(&a, l1); // 利用 cons 造出新的 list
-        free_pair(a.pair);
-        free_list(l1);
-        return l2;
+    /*
+    判斷 n 的值決定是否繼續
+    利用 cons 搭配 take 的遞迴呼叫  建構出回傳的 list
+    */
+    List * ln;
+    if (n>1) {
+      /* code */
+      take(n-1, lptr->next);
+    } else if (n==1) {
+      lptr->next = NULL;
     }
+    ln = cons(lptr->data,lptr->next);
+    return ln;
 }
 
-
-Pair* unzip(List *lptr)
+List* drop(int n, List *lptr)
 {
-    Atom *h;
-    Pair *p, *newp;
-    List *l1, *l2;
-
-    if (lptr==NULL) {
-        newp = pair_list(NULL, NULL);
-        return newp;
+    /*
+    判斷 n 的值決定是否繼續
+    利用 cons 搭配 drop 的遞迴呼叫  建構出回傳的 list
+    */
+    if(lptr == NULL){
+      return NULL;
+    } else if (n == 0){
+      return cons( head(lptr),tail(lptr) );
+    } else{
+      drop( n-1,tail(lptr) );
     }
-
-    h = copy_atom(lptr->data); // 取出 lptr 的開頭第一個 atom
-    p = unzip(lptr->next); // 利用 unzip 對剩下的 lptr 遞迴繼續處理
-    l1 = cons(h->pair->left, p->left->lst);// 兩個 lists 分別來自兩個 cons
-    l2 = cons(h->pair->right, p->right->lst);  // 一個 cons 組合左邊的 list 另一個組合右邊的 list
-    newp = pair_list(l1, l2); // // 利用 pair_list 從兩個 lists 產生新的 pair
-    free_list(l1);
-    free_list(l2);
-    free_pair(p);
-    return newp;
 }
-
 
 Pair* pair_list(List *lptr1, List *lptr2)
 {
@@ -359,6 +339,25 @@ Pair* pair_list(List *lptr1, List *lptr2)
 }
 
 
+Pair* split_at(int n, List *lptr)
+{
+    Pair *p;
+    Atom a;
+    /* 參考 pair_list 的寫法
+    利用 take 和 drop 還有 copy_atom
+    做出 split_at
+    */
+    p = (Pair *)malloc(sizeof(Pair));
+    a.dtype = 3;
+
+    a.lst = drop(n,lptr);
+    p->right = copy_atom(&a);
+
+    a.lst = take(n,lptr);
+    p->left = copy_atom(&a);
+
+    return p;
+}
 
 void print_pair(Pair *p)
 {
